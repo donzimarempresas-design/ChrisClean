@@ -1,0 +1,6 @@
+{
+  "name": "Chris Clean Admin",
+  "description": "Painel de controle administrativo executivo para o serviço de limpeza Chris Clean, permitindo gerir pedidos, serviços, finanças e visualizar relatórios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

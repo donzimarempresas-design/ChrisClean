@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --color-primary: #0284C7; /* Ocean Blue */
+  --color-primary-dark: #0369A1;
+  --color-secondary: #0F172A;
+  --color-accent: #10B981; /* Light Mint Green */
+  --color-dark-bg: #0B0F19;
+  --color-dark-card: #111827;
+  --color-dark-surface: #1F2937;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+  }
+}
+
+:root {
+  --color-bg: #F0F4F8; /* Lighter clean blueish white */
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #E2E8F0;
+  --color-text: #1E293B;
+  --color-text-soft: #64748B;
+  --color-border: rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.01), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 20px rgba(2, 132, 199, 0.04);
+  --shadow-lg: 0 12px 40px rgba(2, 132, 199, 0.06);
+}
+
+.dark {
+  --color-bg: #090D16;
+  --color-surface: #0F1322;
+  --color-surface-hover: #1E2538;
+  --color-text: #F1F5F9;
+  --color-text-soft: #94A3B8;
+  --color-border: rgba(255, 255, 255, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Background gradient effect - Ocean Fresh Mint style */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 60% 50% at 10% -10%, rgba(2, 132, 199, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 100%, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .bg-mesh {
+  background: 
+    radial-gradient(ellipse 60% 50% at 10% -10%, rgba(2, 132, 199, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 100%, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+}
+
+/* Custom transitions */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(2, 132, 199, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 132, 199, 0.5);
+}
