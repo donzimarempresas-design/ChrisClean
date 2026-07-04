@@ -4,23 +4,22 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  MessageSquare, 
-  Phone, 
-  User, 
-  CheckCircle2, 
-  AlertTriangle, 
-  ChevronRight, 
-  Car, 
-  Sofa, 
-  Layers, 
-  Sparkles, 
-  Plus, 
-  Minus, 
-  DollarSign,
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Phone,
+  User,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronRight,
+  Car,
+  Sofa,
+  Layers,
+  Sparkles,
+  Plus,
+  Minus,
   Sun,
   Moon,
   Shield,
@@ -30,69 +29,60 @@ import { motion, AnimatePresence } from 'motion/react';
 import chrisCleanLogo from '../assets/images/chris_clean_logo_1783033986271.jpg';
 import crisProfile from '../assets/images/cris_profile_1783034000370.jpg';
 import marcosProfile from '../assets/images/marcos_profile_1783035332709.jpg';
-import { Servico, Agendamento } from '../types';
-import { fetchServicos, fetchTaxaDeslocacao, createAgendamento } from '../lib/api';
+
+// ============================================================
+// CONFIGURAÇÃO SUPABASE (mesma do painel administrativo)
+// ============================================================
+const SUPABASE_URL = 'https://cfhmflxowbxaqnrczoof.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tR5qCN28XMSmMxStuJFzug_WlKYD6oP';
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json'
+};
+
+// ============================================================
+// TIPOS (mantidos)
+// ============================================================
+interface Servico {
+  id: string;
+  nome: string;
+  precos: Record<string, number>;
+}
+
+interface Agendamento {
+  id?: string;
+  nome: string;
+  cliente: string;
+  servico: string;
+  categoria: string;
+  data: string;
+  hora: string;
+  horario: string;
+  modelo_viatura: string;
+  telefone: string;
+  telemovel: string;
+  phone: string;
+  morada: string;
+  endereco: string;
+  address: string;
+  total: number;
+  taxa_deslocacao: number;
+  status: 'pendente' | 'Em curso' | 'Concluido' | 'Cancelado';
+  created_at?: string;
+}
 
 interface ClientSchedulingProps {
   darkMode?: boolean;
   toggleDarkMode?: () => void;
 }
 
+// ============================================================
+// COMPONENTE PRINCIPAL
+// ============================================================
 export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMode: propToggleDarkMode }: ClientSchedulingProps) {
-  // Local fallback states if props are not passed
+  // Tema
   const [localDarkMode, setLocalDarkMode] = useState(false);
-  const [services, setServices] = useState<Servico[]>([]);
-  const [taxaDeslocacao, setTaxaDeslocacao] = useState(2000);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
-
-  // Form states
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [selectedServiceId, setSelectedServiceId] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [modeloViatura, setModeloViatura] = useState('');
-  const [quantidade, setQuantidade] = useState(1);
-  const [incluirTaxa, setIncluirTaxa] = useState(true);
-  const [data, setData] = useState('');
-  const [horario, setHorario] = useState('08:00');
-  const [endereco, setEndereco] = useState('');
-  const [obs, setObs] = useState('');
-
-  // UI Status
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [confirmedBooking, setConfirmedBooking] = useState<Agendamento | null>(null);
-
-  // WhatsApp link generator helper
-  const getWhatsAppLink = (booking: Agendamento) => {
-    const whatsappNumber = '244923725236';
-    const formattedTotal = formatKwanza(booking.total || 0);
-    const formattedTaxa = formatKwanza(booking.taxa_deslocacao || 0);
-    
-    const msgText = `📅 *NOVO AGENDAMENTO - CHRIS CLEAN*
-
-👤 Cliente: ${booking.nome}
-📞 WhatsApp: ${booking.telefone}
-🔧 Serviço: ${booking.servico}
-📌 Categoria: ${booking.categoria}
-📦 Quantidade: ${quantidade}
-🚗 Modelo da Viatura: ${booking.modelo_viatura || '—'}
-💰 Total Estimado: ${formattedTotal}
-📆 Data: ${booking.data}
-⏰ Horário: ${booking.hora}
-📍 Endereço: ${booking.endereco}
-🚗 Taxa Deslocação: ${formattedTaxa}
-
-✅ *Status:* Aguardando confirmação da CHRIS CLEAN
-
-🧼✨ *Mais do que uma limpeza, entregamos saúde para a sua família e valorização para o seu património.*`;
-
-    return `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(msgText)}`;
-  };
-
-  // Sync internal theme if props not provided
   const isDark = propDarkMode !== undefined ? propDarkMode : localDarkMode;
   const toggleTheme = () => {
     if (propToggleDarkMode) {
@@ -120,7 +110,72 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     }
   }, [propDarkMode]);
 
-  // Fetch services and displacement fee from db
+  // Estados do formulário
+  const [services, setServices] = useState<Servico[]>([]);
+  const [taxaDeslocacao, setTaxaDeslocacao] = useState(2000);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false);
+
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [modeloViatura, setModeloViatura] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
+  const [incluirTaxa, setIncluirTaxa] = useState(true);
+  const [data, setData] = useState('');
+  const [horario, setHorario] = useState('08:00');
+  const [endereco, setEndereco] = useState('');
+  const [obs, setObs] = useState('');
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [confirmedBooking, setConfirmedBooking] = useState<Agendamento | null>(null);
+
+  // ============================================================
+  // FUNÇÕES DE API (substituem o ficheiro api.ts)
+  // ============================================================
+  const fetchServicos = async (): Promise<Servico[]> => {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/servicos?select=*`, { headers: HEADERS });
+    if (!response.ok) throw new Error(`Erro ao buscar serviços: ${response.status}`);
+    const data = await response.json();
+    return data.map((s: any) => ({ ...s, precos: s.precos || {} }));
+  };
+
+  const fetchTaxaDeslocacao = async (): Promise<number> => {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/configuracoes?id=eq.taxa_deslocacao`, { headers: HEADERS });
+    if (!response.ok) throw new Error(`Erro ao buscar taxa: ${response.status}`);
+    const data = await response.json();
+    return data && data.length > 0 ? data[0].valor : 2000;
+  };
+
+  const createAgendamento = async (payload: any): Promise<Agendamento> => {
+    // Garantir que os campos obrigatórios estejam preenchidos
+    const body = {
+      ...payload,
+      status: payload.status || 'pendente',
+      created_at: new Date().toISOString()
+    };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erro ao criar agendamento (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result[0] as Agendamento; // Supabase devolve um array com o registo criado
+  };
+
+  // ============================================================
+  // CARREGAMENTO INICIAL
+  // ============================================================
   useEffect(() => {
     async function loadData() {
       try {
@@ -130,13 +185,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
         ]);
         setServices(sList);
         setTaxaDeslocacao(tValue);
-        
-        // Auto select first service if available
         if (sList.length > 0) {
           setSelectedServiceId(sList[0].id);
         }
       } catch (err) {
-        console.error('Erro ao carregar dados do formulário:', err);
+        console.error('Erro ao carregar dados:', err);
+        setErrorMsg('Não foi possível carregar os serviços. Verifique a sua ligação à internet.');
       } finally {
         setIsLoadingData(false);
       }
@@ -144,18 +198,9 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     loadData();
   }, []);
 
-  // Compute selected items
-  const selectedService = services.find(s => s.id === selectedServiceId);
-  const isViaturaService = selectedService?.nome.toLowerCase().includes('viatura') || 
-                            selectedService?.id.toLowerCase().includes('viatura') ||
-                            selectedService?.nome.toLowerCase().includes('automóvel') ||
-                            selectedService?.nome.toLowerCase().includes('carro');
-
-  const unitPrice = selectedService && selectedCategory ? (selectedService.precos[selectedCategory] || 0) : 0;
-  const currentTaxa = incluirTaxa ? taxaDeslocacao : 0;
-  const totalEstimado = (unitPrice * quantidade) + currentTaxa;
-
-  // Format currency helper
+  // ============================================================
+  // UTILITÁRIOS
+  // ============================================================
   const formatKwanza = (val: number) => {
     return new Intl.NumberFormat('pt-AO', {
       style: 'currency',
@@ -164,48 +209,81 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     }).format(val).replace('AOA', 'AKZ');
   };
 
-  const handleServiceChange = (serviceId: string) => {
-    setSelectedServiceId(serviceId);
-    setSelectedCategory('');
-    setModeloViatura('');
-  };
+  const selectedService = services.find(s => s.id === selectedServiceId);
+  const isViaturaService = selectedService?.nome.toLowerCase().includes('viatura') ||
+                            selectedService?.id.toLowerCase().includes('viatura') ||
+                            selectedService?.nome.toLowerCase().includes('automóvel') ||
+                            selectedService?.nome.toLowerCase().includes('carro');
+
+  const unitPrice = selectedService && selectedCategory ? (selectedService.precos[selectedCategory] || 0) : 0;
+  const currentTaxa = incluirTaxa ? taxaDeslocacao : 0;
+  const totalEstimado = (unitPrice * quantidade) + currentTaxa;
 
   const getServiceIcon = (nome: string) => {
     const n = nome.toLowerCase();
-    if (n.includes('viatura') || n.includes('automóvel') || n.includes('carro') || n.includes('auto')) {
-      return Car;
-    }
-    if (n.includes('sofá') || n.includes('poltrona') || n.includes('cadeira') || n.includes('estofos')) {
-      return Sofa;
-    }
-    if (n.includes('tapete') || n.includes('alcatifa') || n.includes('colchão')) {
-      return Layers;
-    }
+    if (n.includes('viatura') || n.includes('automóvel') || n.includes('carro') || n.includes('auto')) return Car;
+    if (n.includes('sofá') || n.includes('poltrona') || n.includes('cadeira') || n.includes('estofos')) return Sofa;
+    if (n.includes('tapete') || n.includes('alcatifa') || n.includes('colchão')) return Layers;
     return Sparkles;
   };
 
   const getServiceImage = (nome: string) => {
     const n = nome.toLowerCase();
     if (n.includes('viatura') || n.includes('automóvel') || n.includes('carro') || n.includes('auto')) {
-      return 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800'; // Luxury Detailing
+      return 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800';
     }
     if (n.includes('sofá') || n.includes('poltrona') || n.includes('cadeira') || n.includes('estofos')) {
-      return 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=800'; // Clean sofa living room
+      return 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=800';
     }
     if (n.includes('tapete') || n.includes('alcatifa') || n.includes('colchão')) {
-      return 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=800'; // Clean carpet
+      return 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=800';
     }
-    return 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800'; // Detailing specialists
+    return 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800';
   };
 
+  const getWhatsAppLink = (booking: Agendamento) => {
+    const whatsappNumber = '244923725236';
+    const formattedTotal = formatKwanza(booking.total || 0);
+    const formattedTaxa = formatKwanza(booking.taxa_deslocacao || 0);
+    const msgText = `📅 *NOVO AGENDAMENTO - CHRIS CLEAN*
+
+👤 Cliente: ${booking.nome}
+📞 WhatsApp: ${booking.telefone}
+🔧 Serviço: ${booking.servico}
+📌 Categoria: ${booking.categoria}
+📦 Quantidade: ${quantidade}
+🚗 Modelo da Viatura: ${booking.modelo_viatura || '—'}
+💰 Total Estimado: ${formattedTotal}
+📆 Data: ${booking.data}
+⏰ Horário: ${booking.hora}
+📍 Endereço: ${booking.endereco}
+🚗 Taxa Deslocação: ${formattedTaxa}
+
+✅ *Status:* Aguardando confirmação da CHRIS CLEAN
+
+🧼✨ *Mais do que uma limpeza, entregamos saúde para a sua família e valorização para o seu património.*`;
+    return `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(msgText)}`;
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    setSelectedServiceId(serviceId);
+    setSelectedCategory('');
+    setModeloViatura('');
+  };
+
+  // ============================================================
+  // SUBMISSÃO DO FORMULÁRIO
+  // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+
+    // Validações
     if (!nome.trim() || !telefone.trim() || !selectedServiceId || !selectedCategory || !data || !horario || !endereco.trim()) {
       setErrorMsg('Por favor, preencha todos os campos obrigatórios (Nome, WhatsApp, Serviço, Subcategoria, Data, Horário e Endereço).');
       return;
     }
 
-    // Validate time interval (08:00 to 12:00)
     const [hours, minutes] = (horario || '').split(':').map(Number);
     const timeVal = hours + (minutes || 0) / 60;
     if (timeVal < 8 || timeVal > 12) {
@@ -214,7 +292,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     }
 
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       const payload = {
@@ -240,20 +317,19 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
       const result = await createAgendamento(payload);
       setConfirmedBooking(result);
       setSubmitSuccess(true);
-      
-      // Open WhatsApp automatically
+
+      // Abrir WhatsApp automaticamente
       const whatsappUrl = getWhatsAppLink(result);
       try {
         window.open(whatsappUrl, '_blank');
       } catch (err) {
         console.warn('Redirect to WhatsApp blocked by browser, using fallback button', err);
       }
-      
-      // Scroll to top of window smoothly
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      console.error(err);
-      setErrorMsg('Ocorreu um erro ao submeter o seu agendamento. Por favor, tente novamente.');
+    } catch (err: any) {
+      console.error('Erro ao submeter agendamento:', err);
+      setErrorMsg(err.message || 'Ocorreu um erro ao submeter o seu agendamento. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -262,11 +338,8 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   const handleReset = () => {
     setNome('');
     setTelefone('');
-    if (services.length > 0) {
-      setSelectedServiceId(services[0].id);
-    } else {
-      setSelectedServiceId('');
-    }
+    if (services.length > 0) setSelectedServiceId(services[0].id);
+    else setSelectedServiceId('');
     setSelectedCategory('');
     setModeloViatura('');
     setQuantidade(1);
@@ -277,22 +350,26 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     setObs('');
     setSubmitSuccess(false);
     setConfirmedBooking(null);
+    setErrorMsg('');
   };
 
+  // ============================================================
+  // RENDERIZAÇÃO
+  // ============================================================
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-[#F1F5F9] relative transition-colors duration-500 overflow-x-hidden font-sans pb-16">
       {/* Background Mesh */}
       <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none z-0" />
 
-      {/* Futuristic Floating Header */}
+      {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-[#090D16]/70 border-b border-slate-100 dark:border-white/[0.04] transition-colors duration-500 px-4 py-4 md:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-100 dark:border-white/10 flex items-center justify-center shadow-sm">
-              <img 
-                src={chrisCleanLogo} 
-                alt="Chris Clean Logo" 
-                className="w-full h-full object-cover" 
+              <img
+                src={chrisCleanLogo}
+                alt="Chris Clean Logo"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://placehold.co/100x100/0A1F5C/white?text=CC';
                 }}
@@ -309,7 +386,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Elegant Mode Toggler */}
             <button
               type="button"
               onClick={toggleTheme}
@@ -323,15 +399,13 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-8 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Booking details preview, logo, guarantee, profile cards (5 columns) */}
+        {/* Coluna esquerda (imagem, resumo, perfis) */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-          
-          {/* Dynamic Image Card reflecting active service category */}
           <div className="rounded-[24px] overflow-hidden relative h-[220px] md:h-[260px] shadow-xl group border border-slate-100 dark:border-white/[0.04]">
-            <img 
-              src={selectedService ? getServiceImage(selectedService.nome) : 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800'} 
+            <img
+              src={selectedService ? getServiceImage(selectedService.nome) : 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800'}
               alt="Service Visual"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/40 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 text-white">
@@ -347,13 +421,11 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
             </div>
           </div>
 
-          {/* Dynamic Interactive Receipt Board */}
           <div className="bg-white dark:bg-[#0F1322] border border-slate-100 dark:border-white/[0.04] rounded-3xl p-6 shadow-md transition-all duration-300">
             <h4 className="font-display font-bold text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center justify-between">
               <span>Resumo do Orçamento</span>
               <span className="font-mono text-[10px] text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Tempo Real</span>
             </h4>
-
             <div className="space-y-3 font-medium text-xs">
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span className="opacity-70">Serviço Selecionado:</span>
@@ -361,28 +433,24 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                   {selectedService ? selectedService.nome : 'Nenhum'}
                 </span>
               </div>
-              
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span className="opacity-70">Subcategoria:</span>
                 <span className="font-bold text-slate-800 dark:text-white">
                   {selectedCategory ? selectedCategory : '—'}
                 </span>
               </div>
-
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span className="opacity-70">Preço Unitário:</span>
                 <span className="font-bold text-[#00B050]">
                   {selectedCategory ? formatKwanza(unitPrice) : '0 AKZ'}
                 </span>
               </div>
-
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span className="opacity-70">Quantidade total:</span>
                 <span className="font-bold text-slate-800 dark:text-white">
                   {quantidade}x
                 </span>
               </div>
-
               {incluirTaxa && (
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span className="opacity-70">Taxa Deslocação:</span>
@@ -391,7 +459,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                   </span>
                 </div>
               )}
-
               <div className="border-t border-slate-100 dark:border-white/[0.05] pt-4 mt-2 flex justify-between items-center">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide block">Total Estimado</span>
@@ -406,7 +473,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
             </div>
           </div>
 
-          {/* Cristina and Marcos Welcome Card */}
           <div className="bg-gradient-to-br from-[#0A1F5C]/5 to-[#00B050]/5 dark:from-[#0A1F5C]/15 dark:to-[#00B050]/15 rounded-3xl p-5 border border-[#00B050]/10 flex gap-4 items-center">
             <div className="flex -space-x-3 shrink-0">
               <div className="w-12 h-12 rounded-full border-2 border-white dark:border-[#090D16] overflow-hidden shadow-sm">
@@ -423,15 +489,14 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
               </p>
             </div>
           </div>
-
         </div>
 
-        {/* Right Column: Interactive Scheduling Form Wizard (7 columns) */}
+        {/* Coluna direita: Formulário */}
         <div className="lg:col-span-7">
           <AnimatePresence mode="wait">
             {submitSuccess && confirmedBooking ? (
               <motion.div
-                key="success-container"
+                key="success"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -440,61 +505,50 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                 <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
-                
                 <h2 className="text-2xl font-extrabold font-display text-[#0A1F5C] dark:text-white mb-2 tracking-tight">
                   Agendamento Registado!
                 </h2>
-                
                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed mb-8">
                   Olá, <strong className="font-bold text-slate-800 dark:text-white">{confirmedBooking.nome}</strong>. O seu pedido de agendamento foi adicionado com sucesso no nosso sistema de atendimento e já foi notificado à nossa equipa.
                 </p>
 
-                {/* Recibo elegante com visual neobrutalista moderno */}
                 <div className="bg-slate-50 dark:bg-[#161B2E] border border-slate-100 dark:border-white/[0.05] rounded-2xl p-6 text-left mb-8 max-w-md mx-auto space-y-3.5 font-medium text-xs">
                   <div className="flex justify-between border-b border-slate-100 dark:border-white/[0.05] pb-3">
                     <span className="text-slate-400">Ref. Pedido:</span>
                     <span className="font-bold font-mono text-[#00B050]">#{confirmedBooking.id?.slice(-6).toUpperCase()}</span>
                   </div>
-                  
                   <div className="flex justify-between">
                     <span className="text-slate-400">Cliente:</span>
                     <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.nome}</span>
                   </div>
-
                   <div className="flex justify-between">
                     <span className="text-slate-400">Telemóvel:</span>
                     <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.telefone}</span>
                   </div>
-
                   <div className="flex justify-between">
                     <span className="text-slate-400">Serviço:</span>
                     <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.servico}</span>
                   </div>
-
                   <div className="flex justify-between">
                     <span className="text-slate-400">Subcategoria:</span>
                     <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.categoria}</span>
                   </div>
-
                   {confirmedBooking.modelo_viatura && confirmedBooking.modelo_viatura !== '—' && (
                     <div className="flex justify-between">
                       <span className="text-slate-400">Modelo Viatura:</span>
                       <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.modelo_viatura}</span>
                     </div>
                   )}
-
                   <div className="flex justify-between">
                     <span className="text-slate-400">Data e Hora:</span>
                     <span className="font-bold text-slate-800 dark:text-white">
                       {confirmedBooking.data} às {confirmedBooking.hora}
                     </span>
                   </div>
-
                   <div className="flex justify-between">
                     <span className="text-slate-400">Endereço:</span>
                     <span className="font-bold text-slate-800 dark:text-white text-right max-w-[220px] truncate">{confirmedBooking.endereco}</span>
                   </div>
-
                   <div className="flex justify-between border-t border-slate-100 dark:border-white/[0.05] pt-4 text-sm">
                     <span className="text-slate-400 font-bold">Total Estimado:</span>
                     <span className="font-extrabold text-[#00B050] text-lg">{formatKwanza(confirmedBooking.total || 0)}</span>
@@ -508,7 +562,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                   </p>
                 </div>
 
-                {/* Primary WhatsApp Action Button in case of popup block */}
                 <div className="max-w-md mx-auto mb-6">
                   <a
                     href={getWhatsAppLink(confirmedBooking)}
@@ -533,13 +586,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
               </motion.div>
             ) : (
               <motion.div
-                key="form-container"
+                key="form"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="bg-white dark:bg-[#0F1322] border border-slate-100 dark:border-white/[0.04] rounded-3xl p-6 md:p-8 shadow-xl relative transition-colors duration-300"
               >
-                
                 <div className="mb-6">
                   <span className="text-[10px] font-extrabold tracking-widest text-[#00B050] uppercase">Passo único</span>
                   <h2 className="text-xl md:text-2xl font-extrabold font-display text-slate-900 dark:text-white tracking-tight mt-1">
@@ -558,15 +610,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  
-                  {/* Personal details group */}
+                  {/* 1. Identificação */}
                   <div className="space-y-4">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                       1. Identificação de Contacto
                     </h3>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Name Field */}
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                           <User className="w-4 h-4" />
@@ -580,8 +629,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
-
-                      {/* Phone Field */}
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                           <Phone className="w-4 h-4" />
@@ -598,7 +645,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </div>
                   </div>
 
-                  {/* Service interactive selector */}
+                  {/* 2. Serviço */}
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
@@ -623,7 +670,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                       <AnimatePresence mode="wait">
                         {!isServiceMenuOpen && selectedService ? (
                           <motion.div
-                            key="collapsed-service"
+                            key="collapsed"
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -4 }}
@@ -648,7 +695,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           </motion.div>
                         ) : (
                           <motion.div
-                            key="expanded-grid"
+                            key="expanded"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
@@ -664,11 +711,11 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                                     type="button"
                                     onClick={() => {
                                       handleServiceChange(s.id);
-                                      setIsServiceMenuOpen(false); // Auto collapse on select!
+                                      setIsServiceMenuOpen(false);
                                     }}
                                     className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 relative group cursor-pointer ${
-                                      isSelected 
-                                        ? 'bg-gradient-to-br from-[#0A1F5C]/5 to-[#00B050]/5 dark:from-[#0A1F5C]/15 dark:to-[#00B050]/15 border-[#00B050] ring-2 ring-[#00B050]/10 shadow-md' 
+                                      isSelected
+                                        ? 'bg-gradient-to-br from-[#0A1F5C]/5 to-[#00B050]/5 dark:from-[#0A1F5C]/15 dark:to-[#00B050]/15 border-[#00B050] ring-2 ring-[#00B050]/10 shadow-md'
                                         : 'bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/[0.04] hover:bg-slate-100/50 dark:hover:bg-white/[0.04] hover:border-slate-200'
                                     }`}
                                   >
@@ -710,7 +757,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     )}
                   </div>
 
-                  {/* Subcategory choices based on selected service */}
+                  {/* 3. Subcategoria */}
                   {selectedService && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -720,7 +767,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                         3. Escolher Opção Específica / Subcategoria
                       </h3>
-
                       <div className="flex flex-wrap gap-2">
                         {Object.keys(selectedService.precos).map(catName => {
                           const isSelected = catName === selectedCategory;
@@ -731,8 +777,8 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                               type="button"
                               onClick={() => setSelectedCategory(catName)}
                               className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-                                isSelected 
-                                  ? 'bg-[#00B050] text-white border-[#00B050] shadow-sm shadow-[#00B050]/20' 
+                                isSelected
+                                  ? 'bg-[#00B050] text-white border-[#00B050] shadow-sm shadow-[#00B050]/20'
                                   : 'bg-slate-50 dark:bg-white/[0.02] text-slate-600 dark:text-slate-300 border-slate-100 dark:border-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.05]'
                               }`}
                             >
@@ -749,7 +795,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </motion.div>
                   )}
 
-                  {/* Model of Viatura field with elegant micro-reveal */}
+                  {/* 4. Modelo Viatura (condicional) */}
                   <AnimatePresence>
                     {isViaturaService && (
                       <motion.div
@@ -773,13 +819,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     )}
                   </AnimatePresence>
 
-                  {/* Stepper Quantity control */}
+                  {/* 5. Quantidade e taxa */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                     <div className="space-y-3">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                         4. Quantidade de Unidades
                       </h3>
-                      
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
@@ -801,18 +846,16 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                       </div>
                     </div>
 
-                    {/* Displacement switch styled elegantly */}
                     <div className="space-y-3">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                         5. Taxa de Deslocação
                       </h3>
-                      
                       <button
                         type="button"
                         onClick={() => setIncluirTaxa(!incluirTaxa)}
                         className={`w-full p-3 rounded-2xl border text-left flex items-center gap-3 transition-all duration-300 select-none cursor-pointer ${
-                          incluirTaxa 
-                            ? 'bg-emerald-500/5 border-emerald-500/30 text-[#008F41] dark:text-[#4ade80]' 
+                          incluirTaxa
+                            ? 'bg-emerald-500/5 border-emerald-500/30 text-[#008F41] dark:text-[#4ade80]'
                             : 'bg-slate-100 dark:bg-white/[0.02] border-slate-200/50 dark:border-white/[0.04] text-slate-500 dark:text-slate-400'
                         }`}
                       >
@@ -828,14 +871,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </div>
                   </div>
 
-                  {/* Date & Time selection */}
+                  {/* 6. Data e Hora */}
                   <div className="space-y-4 pt-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                       6. Agendar Dia e Horário Preferido
                     </h3>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Date */}
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                           <Calendar className="w-4 h-4" />
@@ -848,8 +889,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-xs font-bold outline-none focus:border-[#00B050]"
                         />
                       </div>
-
-                      {/* Time */}
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                           <Clock className="w-4 h-4" />
@@ -865,8 +904,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                         />
                       </div>
                     </div>
-
-                    {/* Time limit notice */}
                     {(() => {
                       if (!horario) return null;
                       const [hours, minutes] = horario.split(':').map(Number);
@@ -892,14 +929,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     })()}
                   </div>
 
-                  {/* Location & comments */}
+                  {/* 7. Endereço */}
                   <div className="space-y-4 pt-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 select-none">
                       7. Detalhes de Endereço
                     </h3>
-
                     <div className="space-y-4">
-                      {/* Location Input */}
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                           <MapPin className="w-4 h-4" />
@@ -913,8 +948,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
-
-                      {/* Observations / Comments */}
                       <div className="relative">
                         <span className="absolute left-4 top-4 text-slate-400">
                           <MessageSquare className="w-4 h-4" />
@@ -930,7 +963,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </div>
                   </div>
 
-                  {/* Submit Button */}
+                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={isSubmitting}
@@ -940,7 +973,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     {!isSubmitting && <ChevronRight className="w-4 h-4" />}
                   </button>
 
-                  {/* Trust Footer */}
                   <div className="pt-2 border-t border-slate-100 dark:border-white/[0.04] flex items-center justify-center gap-5 text-slate-400 text-[10px]">
                     <div className="flex items-center gap-1.5 font-semibold">
                       <Shield className="w-3.5 h-3.5 text-[#00B050]" />
@@ -952,9 +984,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                       <span>Suporte Rápido</span>
                     </div>
                   </div>
-
                 </form>
-
               </motion.div>
             )}
           </AnimatePresence>
