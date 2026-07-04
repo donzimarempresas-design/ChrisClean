@@ -31,7 +31,7 @@ import crisProfile from '../assets/images/cris_profile_1783034000370.jpg';
 import marcosProfile from '../assets/images/marcos_profile_1783035332709.jpg';
 
 // ============================================================
-// CONFIGURAÇÃO SUPABASE (mesma do painel administrativo)
+// CONFIGURAÇÃO SUPABASE
 // ============================================================
 const SUPABASE_URL = 'https://cfhmflxowbxaqnrczoof.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tR5qCN28XMSmMxStuJFzug_WlKYD6oP';
@@ -42,7 +42,7 @@ const HEADERS = {
 };
 
 // ============================================================
-// TIPOS
+// TIPOS (ajustados ao esquema real)
 // ============================================================
 interface Servico {
   id: string;
@@ -53,21 +53,19 @@ interface Servico {
 interface Agendamento {
   id?: string;
   nome: string;
-  cliente: string;
+  telefone: string;
   servico: string;
   categoria: string;
-  data: string;
-  hora: string;
-  horario: string;
-  modelo_viatura: string;
-  telefone: string;
-  telemovel: string;
-  phone: string;
-  morada: string;
-  endereco: string;
+  quantidade: number;
   total: number;
-  taxa_deslocacao: number;
+  data: string;
+  horario: string;
+  endereco: string;
+  obs?: string | null;
   status: 'pendente' | 'Em curso' | 'Concluido' | 'Cancelado';
+  taxa_cobrada: number;
+  incluir_taxa: boolean;
+  modelo_viatura?: string | null;
   created_at?: string;
 }
 
@@ -133,7 +131,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   const [confirmedBooking, setConfirmedBooking] = useState<Agendamento | null>(null);
 
   // ============================================================
-  // FUNÇÕES DE API (substituem o ficheiro api.ts)
+  // FUNÇÕES DE API
   // ============================================================
   const fetchServicos = async (): Promise<Servico[]> => {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/servicos?select=*`, { headers: HEADERS });
@@ -150,17 +148,26 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   const createAgendamento = async (payload: any): Promise<Agendamento> => {
-    // Remove qualquer campo que não exista na tabela (address)
-    const { address, ...cleanPayload } = payload;
-    
-    // Garantir que os campos obrigatórios estejam preenchidos
+    // Mapear os campos do formulário para as colunas da tabela
     const body = {
-      ...cleanPayload,
-      status: cleanPayload.status || 'pendente',
-      created_at: new Date().toISOString()
+      nome: payload.nome,
+      telefone: payload.telefone,
+      servico: payload.servico,
+      categoria: payload.categoria,
+      quantidade: payload.quantidade,
+      total: payload.total,
+      data: payload.data,
+      horario: payload.horario,
+      endereco: payload.endereco,
+      obs: payload.obs || null,
+      status: payload.status || 'pendente',
+      taxa_cobrada: payload.taxa_cobrada,
+      incluir_taxa: payload.incluir_taxa,
+      modelo_viatura: payload.modelo_viatura || null,
+      // created_at será gerado automaticamente pelo Supabase
     };
 
-    console.log('Payload a enviar:', body); // Log para depuração
+    console.log('Payload a enviar:', body);
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
       method: 'POST',
@@ -248,18 +255,18 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   const getWhatsAppLink = (booking: Agendamento) => {
     const whatsappNumber = '244923725236';
     const formattedTotal = formatKwanza(booking.total || 0);
-    const formattedTaxa = formatKwanza(booking.taxa_deslocacao || 0);
+    const formattedTaxa = formatKwanza(booking.taxa_cobrada || 0);
     const msgText = `📅 *NOVO AGENDAMENTO - CHRIS CLEAN*
 
 👤 Cliente: ${booking.nome}
 📞 WhatsApp: ${booking.telefone}
 🔧 Serviço: ${booking.servico}
 📌 Categoria: ${booking.categoria}
-📦 Quantidade: ${quantidade}
+📦 Quantidade: ${booking.quantidade}
 🚗 Modelo da Viatura: ${booking.modelo_viatura || '—'}
 💰 Total Estimado: ${formattedTotal}
 📆 Data: ${booking.data}
-⏰ Horário: ${booking.hora}
+⏰ Horário: ${booking.horario}
 📍 Endereço: ${booking.endereco}
 🚗 Taxa Deslocação: ${formattedTaxa}
 
@@ -276,13 +283,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   // ============================================================
-  // SUBMISSÃO DO FORMULÁRIO
+  // SUBMISSÃO
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    // Validações
     if (!nome.trim() || !telefone.trim() || !selectedServiceId || !selectedCategory || !data || !horario || !endereco.trim()) {
       setErrorMsg('Por favor, preencha todos os campos obrigatórios (Nome, WhatsApp, Serviço, Subcategoria, Data, Horário e Endereço).');
       return;
@@ -300,29 +306,25 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     try {
       const payload = {
         nome: nome.trim(),
-        cliente: nome.trim(),
+        telefone: telefone.trim(),
         servico: selectedService?.nome || '',
         categoria: selectedCategory,
-        data,
-        hora: horario,
-        horario,
-        modelo_viatura: isViaturaService ? modeloViatura.trim() : '—',
-        telefone: telefone.trim(),
-        telemovel: telefone.trim(),
-        phone: telefone.trim(),
-        morada: endereco.trim(),
-        endereco: endereco.trim(),
-        // address removido porque não existe na tabela
+        quantidade: quantidade,
         total: totalEstimado,
-        taxa_deslocacao: currentTaxa,
-        status: 'pendente' as const
+        data: data,
+        horario: horario,
+        endereco: endereco.trim(),
+        obs: obs.trim() || null,
+        status: 'pendente' as const,
+        taxa_cobrada: currentTaxa,
+        incluir_taxa: incluirTaxa,
+        modelo_viatura: isViaturaService ? modeloViatura.trim() : null,
       };
 
       const result = await createAgendamento(payload);
       setConfirmedBooking(result);
       setSubmitSuccess(true);
 
-      // Abrir WhatsApp automaticamente
       const whatsappUrl = getWhatsAppLink(result);
       try {
         window.open(whatsappUrl, '_blank');
@@ -358,7 +360,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   // ============================================================
-  // RENDERIZAÇÃO (mesmo layout, sem alterações visuais)
+  // RENDER (mantido exatamente igual, sem alterações visuais)
   // ============================================================
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-[#F1F5F9] relative transition-colors duration-500 overflow-x-hidden font-sans pb-16">
@@ -401,7 +403,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-8 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Coluna esquerda - resumo e perfis (mesmo código) */}
+        {/* Coluna esquerda - resumo e perfis */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
           <div className="rounded-[24px] overflow-hidden relative h-[220px] md:h-[260px] shadow-xl group border border-slate-100 dark:border-white/[0.04]">
             <img
@@ -535,7 +537,11 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     <span className="text-slate-400">Subcategoria:</span>
                     <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.categoria}</span>
                   </div>
-                  {confirmedBooking.modelo_viatura && confirmedBooking.modelo_viatura !== '—' && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Quantidade:</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.quantidade}</span>
+                  </div>
+                  {confirmedBooking.modelo_viatura && (
                     <div className="flex justify-between">
                       <span className="text-slate-400">Modelo Viatura:</span>
                       <span className="font-bold text-slate-800 dark:text-white">{confirmedBooking.modelo_viatura}</span>
@@ -544,13 +550,19 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                   <div className="flex justify-between">
                     <span className="text-slate-400">Data e Hora:</span>
                     <span className="font-bold text-slate-800 dark:text-white">
-                      {confirmedBooking.data} às {confirmedBooking.hora}
+                      {confirmedBooking.data} às {confirmedBooking.horario}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Endereço:</span>
                     <span className="font-bold text-slate-800 dark:text-white text-right max-w-[220px] truncate">{confirmedBooking.endereco}</span>
                   </div>
+                  {confirmedBooking.obs && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Observações:</span>
+                      <span className="font-bold text-slate-800 dark:text-white text-right max-w-[200px] truncate">{confirmedBooking.obs}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t border-slate-100 dark:border-white/[0.05] pt-4 text-sm">
                     <span className="text-slate-400 font-bold">Total Estimado:</span>
                     <span className="font-extrabold text-[#00B050] text-lg">{formatKwanza(confirmedBooking.total || 0)}</span>
