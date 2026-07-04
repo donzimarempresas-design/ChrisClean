@@ -42,7 +42,7 @@ const HEADERS = {
 };
 
 // ============================================================
-// TIPOS (mantidos)
+// TIPOS
 // ============================================================
 interface Servico {
   id: string;
@@ -65,7 +65,6 @@ interface Agendamento {
   phone: string;
   morada: string;
   endereco: string;
-  address: string;
   total: number;
   taxa_deslocacao: number;
   status: 'pendente' | 'Em curso' | 'Concluido' | 'Cancelado';
@@ -151,12 +150,17 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   const createAgendamento = async (payload: any): Promise<Agendamento> => {
+    // Remove qualquer campo que não exista na tabela (address)
+    const { address, ...cleanPayload } = payload;
+    
     // Garantir que os campos obrigatórios estejam preenchidos
     const body = {
-      ...payload,
-      status: payload.status || 'pendente',
+      ...cleanPayload,
+      status: cleanPayload.status || 'pendente',
       created_at: new Date().toISOString()
     };
+
+    console.log('Payload a enviar:', body); // Log para depuração
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
       method: 'POST',
@@ -170,7 +174,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     }
 
     const result = await response.json();
-    return result[0] as Agendamento; // Supabase devolve um array com o registo criado
+    return result[0] as Agendamento;
   };
 
   // ============================================================
@@ -308,7 +312,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
         phone: telefone.trim(),
         morada: endereco.trim(),
         endereco: endereco.trim(),
-        address: endereco.trim(),
+        // address removido porque não existe na tabela
         total: totalEstimado,
         taxa_deslocacao: currentTaxa,
         status: 'pendente' as const
@@ -354,14 +358,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   // ============================================================
-  // RENDERIZAÇÃO
+  // RENDERIZAÇÃO (mesmo layout, sem alterações visuais)
   // ============================================================
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-[#F1F5F9] relative transition-colors duration-500 overflow-x-hidden font-sans pb-16">
-      {/* Background Mesh */}
       <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none z-0" />
 
-      {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-[#090D16]/70 border-b border-slate-100 dark:border-white/[0.04] transition-colors duration-500 px-4 py-4 md:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -399,7 +401,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 pt-8 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Coluna esquerda (imagem, resumo, perfis) */}
+        {/* Coluna esquerda - resumo e perfis (mesmo código) */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
           <div className="rounded-[24px] overflow-hidden relative h-[220px] md:h-[260px] shadow-xl group border border-slate-100 dark:border-white/[0.04]">
             <img
@@ -491,7 +493,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
           </div>
         </div>
 
-        {/* Coluna direita: Formulário */}
+        {/* Coluna direita - formulário */}
         <div className="lg:col-span-7">
           <AnimatePresence mode="wait">
             {submitSuccess && confirmedBooking ? (
@@ -795,7 +797,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </motion.div>
                   )}
 
-                  {/* 4. Modelo Viatura (condicional) */}
+                  {/* 4. Modelo Viatura */}
                   <AnimatePresence>
                     {isViaturaService && (
                       <motion.div
@@ -963,7 +965,6 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </div>
                   </div>
 
-                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={isSubmitting}
