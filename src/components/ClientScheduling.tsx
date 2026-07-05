@@ -51,7 +51,7 @@ interface Servico {
 }
 
 interface Agendamento {
-  id?: string;
+  id?: string | number;
   nome: string;
   telefone: string;
   servico: string;
@@ -147,66 +147,59 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     return data && data.length > 0 ? data[0].valor : 2000;
   };
 
- const createAgendamento = async (payload: any): Promise<Agendamento> => {
-  // Mapear os campos do formulário para as colunas da tabela
-  const body = {
-    nome: payload.nome,
-    telefone: payload.telefone,
-    servico: payload.servico,
-    categoria: payload.categoria,
-    quantidade: payload.quantidade,
-    total: payload.total,
-    data: payload.data,
-    horario: payload.horario,
-    endereco: payload.endereco,
-    obs: payload.obs || null,
-    status: payload.status || 'pendente',
-    taxa_cobrada: payload.taxa_cobrada,
-    incluir_taxa: payload.incluir_taxa,
-    modelo_viatura: payload.modelo_viatura || null,
+  const createAgendamento = async (payload: any): Promise<Agendamento> => {
+    const body = {
+      nome: payload.nome,
+      telefone: payload.telefone,
+      servico: payload.servico,
+      categoria: payload.categoria,
+      quantidade: payload.quantidade,
+      total: payload.total,
+      data: payload.data,
+      horario: payload.horario,
+      endereco: payload.endereco,
+      obs: payload.obs || null,
+      status: payload.status || 'pendente',
+      taxa_cobrada: payload.taxa_cobrada,
+      incluir_taxa: payload.incluir_taxa,
+      modelo_viatura: payload.modelo_viatura || null,
+    };
+
+    console.log('Payload a enviar:', body);
+
+    const headers = {
+      ...HEADERS,
+      'Prefer': 'return=representation'
+    };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    console.log('Status da resposta:', response.status);
+    const responseText = await response.text();
+    console.log('Resposta do servidor (texto):', responseText);
+
+    if (!response.ok) {
+      throw new Error(`Erro ao criar agendamento (${response.status}): ${responseText}`);
+    }
+
+    if (!responseText || responseText.trim() === '') {
+      console.warn('Resposta vazia do servidor, usando fallback.');
+      return { ...body, id: 'temp_' + Date.now() } as Agendamento;
+    }
+
+    try {
+      const result = JSON.parse(responseText);
+      const booking = Array.isArray(result) ? result[0] : result;
+      return booking as Agendamento;
+    } catch (e) {
+      console.error('Erro ao parsear JSON da resposta:', e);
+      return { ...body, id: 'temp_' + Date.now() } as Agendamento;
+    }
   };
-
-  console.log('Payload a enviar:', body);
-
-  // Cabeçalhos com Prefer para forçar retorno do registo
-  const headers = {
-    ...HEADERS,
-    'Prefer': 'return=representation'
-  };
-
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  });
-
-  console.log('Status da resposta:', response.status);
-
-  // Ler a resposta como texto (pode estar vazia)
-  const responseText = await response.text();
-  console.log('Resposta do servidor (texto):', responseText);
-
-  if (!response.ok) {
-    throw new Error(`Erro ao criar agendamento (${response.status}): ${responseText}`);
-  }
-
-  // Se a resposta estiver vazia, usamos fallback
-  if (!responseText || responseText.trim() === '') {
-    console.warn('Resposta vazia do servidor, usando fallback.');
-    return { ...body, id: 'temp_' + Date.now() } as Agendamento;
-  }
-
-  // Tentar parsear JSON
-  try {
-    const result = JSON.parse(responseText);
-    // Supabase devolve um array com o registo inserido
-    return (Array.isArray(result) ? result[0] : result) as Agendamento;
-  } catch (e) {
-    console.error('Erro ao parsear JSON da resposta:', e);
-    // Fallback: retornar o payload com um id temporário
-    return { ...body, id: 'temp_' + Date.now() } as Agendamento;
-  }
-};
 
   // ============================================================
   // CARREGAMENTO INICIAL
@@ -384,7 +377,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   // ============================================================
-  // RENDER (mantido exatamente igual)
+  // RENDER (com correção do slice)
   // ============================================================
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-[#F1F5F9] relative transition-colors duration-500 overflow-x-hidden font-sans pb-16">
@@ -543,7 +536,9 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                 <div className="bg-slate-50 dark:bg-[#161B2E] border border-slate-100 dark:border-white/[0.05] rounded-2xl p-6 text-left mb-8 max-w-md mx-auto space-y-3.5 font-medium text-xs">
                   <div className="flex justify-between border-b border-slate-100 dark:border-white/[0.05] pb-3">
                     <span className="text-slate-400">Ref. Pedido:</span>
-                    <span className="font-bold font-mono text-[#00B050]">#{confirmedBooking.id?.slice(-6).toUpperCase()}</span>
+                    <span className="font-bold font-mono text-[#00B050]">
+                      #{String(confirmedBooking.id).slice(-6).toUpperCase()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Cliente:</span>
