@@ -42,7 +42,7 @@ const HEADERS = {
 };
 
 // ============================================================
-// TIPOS (ajustados ao esquema real)
+// TIPOS
 // ============================================================
 interface Servico {
   id: string;
@@ -131,7 +131,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   const [confirmedBooking, setConfirmedBooking] = useState<Agendamento | null>(null);
 
   // ============================================================
-  // FUNÇÕES DE API
+  // FUNÇÕES DE API (CORRIGIDAS)
   // ============================================================
   const fetchServicos = async (): Promise<Servico[]> => {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/servicos?select=*`, { headers: HEADERS });
@@ -147,42 +147,66 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
     return data && data.length > 0 ? data[0].valor : 2000;
   };
 
-  const createAgendamento = async (payload: any): Promise<Agendamento> => {
-    // Mapear os campos do formulário para as colunas da tabela
-    const body = {
-      nome: payload.nome,
-      telefone: payload.telefone,
-      servico: payload.servico,
-      categoria: payload.categoria,
-      quantidade: payload.quantidade,
-      total: payload.total,
-      data: payload.data,
-      horario: payload.horario,
-      endereco: payload.endereco,
-      obs: payload.obs || null,
-      status: payload.status || 'pendente',
-      taxa_cobrada: payload.taxa_cobrada,
-      incluir_taxa: payload.incluir_taxa,
-      modelo_viatura: payload.modelo_viatura || null,
-      // created_at será gerado automaticamente pelo Supabase
-    };
-
-    console.log('Payload a enviar:', body);
-
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Erro ao criar agendamento (${response.status}): ${errorText}`);
-    }
-
-    const result = await response.json();
-    return result[0] as Agendamento;
+ const createAgendamento = async (payload: any): Promise<Agendamento> => {
+  // Mapear os campos do formulário para as colunas da tabela
+  const body = {
+    nome: payload.nome,
+    telefone: payload.telefone,
+    servico: payload.servico,
+    categoria: payload.categoria,
+    quantidade: payload.quantidade,
+    total: payload.total,
+    data: payload.data,
+    horario: payload.horario,
+    endereco: payload.endereco,
+    obs: payload.obs || null,
+    status: payload.status || 'pendente',
+    taxa_cobrada: payload.taxa_cobrada,
+    incluir_taxa: payload.incluir_taxa,
+    modelo_viatura: payload.modelo_viatura || null,
   };
+
+  console.log('Payload a enviar:', body);
+
+  // Cabeçalhos com Prefer para forçar retorno do registo
+  const headers = {
+    ...HEADERS,
+    'Prefer': 'return=representation'
+  };
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/agendamentos`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  console.log('Status da resposta:', response.status);
+
+  // Ler a resposta como texto (pode estar vazia)
+  const responseText = await response.text();
+  console.log('Resposta do servidor (texto):', responseText);
+
+  if (!response.ok) {
+    throw new Error(`Erro ao criar agendamento (${response.status}): ${responseText}`);
+  }
+
+  // Se a resposta estiver vazia, usamos fallback
+  if (!responseText || responseText.trim() === '') {
+    console.warn('Resposta vazia do servidor, usando fallback.');
+    return { ...body, id: 'temp_' + Date.now() } as Agendamento;
+  }
+
+  // Tentar parsear JSON
+  try {
+    const result = JSON.parse(responseText);
+    // Supabase devolve um array com o registo inserido
+    return (Array.isArray(result) ? result[0] : result) as Agendamento;
+  } catch (e) {
+    console.error('Erro ao parsear JSON da resposta:', e);
+    // Fallback: retornar o payload com um id temporário
+    return { ...body, id: 'temp_' + Date.now() } as Agendamento;
+  }
+};
 
   // ============================================================
   // CARREGAMENTO INICIAL
@@ -360,7 +384,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
   };
 
   // ============================================================
-  // RENDER (mantido exatamente igual, sem alterações visuais)
+  // RENDER (mantido exatamente igual)
   // ============================================================
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-[#F1F5F9] relative transition-colors duration-500 overflow-x-hidden font-sans pb-16">
