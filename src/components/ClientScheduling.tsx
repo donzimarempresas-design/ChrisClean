@@ -494,22 +494,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#0A1F5C]/5 to-[#00B050]/5 dark:from-[#0A1F5C]/15 dark:to-[#00B050]/15 rounded-3xl p-5 border border-[#00B050]/10 flex gap-4 items-center">
-            <div className="flex -space-x-3 shrink-0">
-              <div className="w-12 h-12 rounded-full border-2 border-white dark:border-[#090D16] overflow-hidden shadow-sm">
-                <img src={crisProfile} alt="Cristina Profile" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-12 h-12 rounded-full border-2 border-white dark:border-[#090D16] overflow-hidden shadow-sm">
-                <img src={marcosProfile} alt="Marcos Profile" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <div className="text-xs">
-              <span className="font-bold text-slate-800 dark:text-white block">Equipa Chris Clean</span>
-              <p className="text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">
-                Olá! Somos a <strong>Cristina</strong> e o <strong>Marcos</strong>. Reserve o seu agendamento e nós entraremos em contacto consigo em até <strong>10 minutos</strong>.
-              </p>
-            </div>
-          </div>
+
         </div>
 
         {/* Coluna direita - formulário */}
@@ -595,19 +580,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                   </p>
                 </div>
 
-                <div className="max-w-md mx-auto mb-6">
-                  <a
-                    href={getWhatsAppLink(confirmedBooking)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-4 bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#128C7E] hover:to-[#075E54] text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:translate-y-0.5 hover:-translate-y-0.5 transform cursor-pointer"
-                  >
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.335 4.978L2 22l5.13-1.348a9.96 9.96 0 0 0 4.877 1.28c5.508 0 9.99-4.478 9.99-9.984 0-2.67-1.04-5.18-2.92-7.06A9.907 9.907 0 0 0 12.012 2zm6.035 14.156c-.263.74-1.286 1.343-1.785 1.408-.436.057-.998.077-1.636-.128a11.121 11.121 0 0 1-5.018-2.96c-1.636-1.636-2.73-3.64-3.036-4.146-.3-.505-.032-.78.22-.1.222.18.5.586.222.846-.08.08-.184.22-.26.313-.263.313-.538.653-.223 1.2.316.547 1.4 2.3 3.01 3.73 1.956 1.737 3.6 2.278 4.106 2.484.505.207.804.153 1.107-.153.303-.306 1.31-1.527 1.66-2.05.35-.523.7-.437 1.18-.25.48.187 3.05 1.437 3.19 1.513.136.076.228.113.262.17.035.057.035.334-.228 1.074z"/>
-                    </svg>
-                    Confirmar e Enviar no WhatsApp
-                  </a>
-                </div>
+
 
                 <button
                   type="button"
@@ -659,7 +632,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           placeholder="Nome completo"
                           value={nome}
                           onChange={(e) => setNome(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
                       <div className="relative">
@@ -672,7 +645,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           placeholder="WhatsApp ou telemóvel"
                           value={telefone}
                           onChange={(e) => setTelefone(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
                     </div>
@@ -846,7 +819,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           placeholder="Ex: Hyundai i10, Kia Picanto, etc."
                           value={modeloViatura}
                           onChange={(e) => setModeloViatura(e.target.value)}
-                          className="w-full px-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white transition-all duration-300"
+                          className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </motion.div>
                     )}
@@ -911,7 +884,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-300 pointer-events-none">
                           <Calendar className="w-4 h-4" />
                         </span>
                         <input
@@ -919,11 +892,12 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           required
                           value={data}
                           onChange={(e) => setData(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-xs font-bold outline-none focus:border-[#00B050]"
+                          style={{ colorScheme: isDark ? 'dark' : 'normal' }}
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-300 pointer-events-none">
                           <Clock className="w-4 h-4" />
                         </span>
                         <input
@@ -933,7 +907,8 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           max="12:00"
                           value={horario}
                           onChange={(e) => setHorario(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-xs font-bold outline-none focus:border-[#00B050]"
+                          style={{ colorScheme: isDark ? 'dark' : 'normal' }}
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
                     </div>
@@ -952,7 +927,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                               <span className="text-sm shrink-0">⚠️</span>
                               <div>
                                 <strong className="block font-bold mb-0.5">Horário Indisponível (08:00 às 12:00)</strong>
-                                <p>Nossos serviços são realizados apenas entre as <strong>08:00</strong> e as <strong>12:00</strong>. Devido ao tempo necessário para realizar um excelente serviço, se agendar fora deste período (por exemplo, após as 12:00), sugerimos agendar para o <strong>dia seguinte</strong> para que possamos atendê-lo com toda a qualidade.</p>
+                                <p>Nossos serviços são realizados apenas entre as <strong>08:00</strong> e as <strong>12:00</strong>. Devido ao tempo necessário para realizar um excellent serviço, se agendar fora deste período (por exemplo, após as 12:00), sugerimos agendar para o <strong>dia seguinte</strong> para que possamos atendê-lo com toda a qualidade.</p>
                               </div>
                             </div>
                           </motion.div>
@@ -978,7 +953,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           placeholder="📍 Introduza o seu endereço ou localização"
                           value={endereco}
                           onChange={(e) => setEndereco(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300"
                         />
                       </div>
                       <div className="relative">
@@ -990,7 +965,7 @@ export default function ClientScheduling({ darkMode: propDarkMode, toggleDarkMod
                           rows={2}
                           value={obs}
                           onChange={(e) => setObs(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] rounded-2xl text-slate-800 dark:text-white text-sm outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300 resize-none"
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#00B050] focus:bg-white dark:focus:bg-[#0F1322] focus:ring-4 focus:ring-[#00B050]/5 transition-all duration-300 resize-none"
                         />
                       </div>
                     </div>
